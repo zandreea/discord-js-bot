@@ -4,19 +4,19 @@ const Discord = require('discord.js');
 const client = new Discord.Client();
 const fs = require('fs');
 const auth = require("./auth.json");
-// const commands = require("./commands.js");
+//var commands = require("./commands.js");
 
-var tictacgame, symbols = ["x","o"], botlines, nr, map = {};
+var botlines, tictacgame, symbols = ["x","o"],  map = {}, nr;
 
 class Command {
 	
 	constructor (message) {
 	
-        this._commandName = message.content.substring(1).split(' ')[0];
-       
-    }
+		this._commandName = message.content.substring(1).split(' ')[0];
 
-	doCommand(message){
+	}
+
+	doCommand (message){
     	switch(this._commandName) {
         
             case 'ping':
@@ -34,13 +34,22 @@ class Command {
 			case 'commands':
 				message.reply("the commands are: \0 >ping; \0 >encourage \0 >speak \0 >say \0 >tictactoe \0 >commands");
 				break;	
-			case 'tictactoe': 
-				tictacgame = new TicTacToe(message);
-				tictacgame.startGame(message);
+			case 'tictactoe':
+				for (var i in map) {
+					if(map[message.channel.id]){
+						message.reply("there's already an ongoing game in this channel.");
+						return;
+					}
+				}
+
+				map[message.channel.id] = new TicTacToe(message);
+				map[message.channel.id].startGame(message);
 				break;
 			case 'mark':
-				if(tictacgame == undefined)
-					message.reply("there is no ongoing tic tac toe game in this channel, dummy.");
+				if(!map[message.channel.id]){
+						message.reply("there is no ongoing tic tac toe game in this channel, dummy.");
+						return;
+					}
 				if(message.content.substring(1).split(' ').length != 3 || 
 						 ( message.content.substring(1).split(' ')[1] != 0 && 
 						   message.content.substring(1).split(' ')[1] != 1 &&
@@ -49,13 +58,11 @@ class Command {
 						   message.content.substring(1).split(' ')[2] != 1 &&
 						   message.content.substring(1).split(' ')[2] != 2
 					)
-				) 
+				) {
 					message.reply("wrong move, expected coordinates between 0 and 2. Try again.");
-				else tictacgame.playGame(message);
-				// if(tictacgame.endGame(message)){
-				// 	tictacgame = null;
-				// 	delete tictacgame;
-				// }
+				return;
+				}
+				else map[message.channel.id].playGame(message);
 				break;
 			break;
 		}
@@ -89,16 +96,6 @@ class TicTacToe extends Game {
 	}
 
 	startGame (message) {
-		
-		for (var i in map) {
-			if(i == this._gameChannel && map[i] == "tictactoe"){
-				message.reply("there's already an ongoing game in this channel.");
-				return;
-			}
-			
-		}
-
-		map[this._gameChannel] = "tictactoe";
 
 		if(this._players[1][0] != '<' && this._players[1][1] != '@'){
 
@@ -119,17 +116,16 @@ class TicTacToe extends Game {
 							 this._gameBoard[2][0] + " " +
 							 this._gameBoard[2][1] + " " +
 							 this._gameBoard[2][2] + " ");
-		
 	}
 
-	endGame (message) {
+	endGameWin (message) {
 
 		for (var i in map){
 			if(i==this._gameChannel && map[i] == "tictactoe")
 				map[i] = "";
 		}
 		
-		message.reply("The game has ended");
+		message.channel.send("<@" + this._players[this._turn] + "> won. Great moves, keep it up, proud of ya!");
 
 		map[this._gameChannel] = "";
 
@@ -137,21 +133,37 @@ class TicTacToe extends Game {
 
 	}
 
-	didTheGameEnd (i,j) {
+	endGameDraw (message) {
 
+		for (var i in map){
+			if(i==this._gameChannel && map[i] == "tictactoe")
+				map[i] = "";
+		}
+		
+		message.channel.send("It's a draw. Wah-wah.");
+
+		map[this._gameChannel] = "";
+
+		return true;
+
+	}
+
+	isItADraw () {
+		for(var x=0;x<3;x++)
+			for(var y=0;y<3;y++)
+				if(this._gameBoard[x][y] == '-')
+					return false;
+
+		return true;
+	}
+
+	isItAWin (i,j) {
 		if ((this._gameBoard[0][j] != '-' && this._gameBoard[0][j] == this._gameBoard[1][j] && this._gameBoard[1][j] == this._gameBoard[2][j]) ||
 			(this._gameBoard[i][0] != '-' && this._gameBoard[i][0] == this._gameBoard[i][1] && this._gameBoard[i][1] == this._gameBoard[i][2]) ||
 			(this._gameBoard[0][0] != '-' && this._gameBoard[0][0] == this._gameBoard[1][1] && this._gameBoard[1][1] == this._gameBoard[2][2]) ||
 			(this._gameBoard[0][2] != '-' && this._gameBoard[0][2] == this._gameBoard[1][1] && this._gameBoard[1][1] == this._gameBoard[2][0]))
 			return true;
-
-		for(var x=0;x<2;x++)
-			for(var y=0;y<2;y++)
-				if(this._gameBoard[x][y] == '-')
-					return false;
-
-		return true;
-
+		return false;
 	}
 
 	playGame (message) {
@@ -188,10 +200,17 @@ class TicTacToe extends Game {
 
 		this._turn = this._turn == 1 ? 0 : 1;
 
-		if(this.didTheGameEnd(i,j)){
-			message.channel.send("Game ended.");
+		if(this.isItADraw()){
+			this.endGameDraw(message);
 			return;
 		}
+
+		if(this.isItAWin(i,j)){
+			this.endGameWin(message);
+			return;
+		}
+
+
 
 		message.channel.send("<@" + this._players[this._turn] + ">, make your move.");
 	}

@@ -1,8 +1,5 @@
-"use strict";
 
 
-
-
-module.exports = {Command, Game, TicTacToe};
-
-
+module.exports.Command = Command;
+module.exports.Game = Game;
+module.exports.TicTacToe = TicTacToe;
