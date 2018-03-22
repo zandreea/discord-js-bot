@@ -13,37 +13,57 @@ class Command {
 	constructor (message) {
 	
 		this._commandName = message.content.substring(1).split(' ')[0];
+		this._argsNumber = message.content.substring(1).split(' ').length - 1;
+		this._commandArgs = [];
+		for(var i = 1; i <= this._argsNumber; i++ ){
+			this._commandArgs[i-1] = message.content.substring(1).split(' ')[i];
+		}
+		this._commandChannel = message.channel.id;
 
 	}
 
-	doCommand (message){
+	doCommand (message) {
+
     	switch(this._commandName) {
         
-            case 'ping':
-            	message.reply('pong');
-            	break; 
-		    case 'encourage':
-		    	message.reply(botlines.encourage[getRandomInt(9)]);
-		    	break;
-			case 'speak': 
-				message.reply(botlines.speak[getRandomInt(14)]);
-				break;
-			case 'say':
-				message.reply(message.content.substring(4));
-				break;
-			case 'commands':
-				message.reply("the commands are: ping, encourage, speak, say, tictactoe, mark, mastermind, guess, commands");
-				break;	
+            case 'ping': message.reply('pong'); break; 
+		    case 'encourage': message.reply(botlines.encourage[getRandomInt(9)]); break;
+			case 'speak': message.channel.send(botlines.speak[getRandomInt(14)]); break;
+			case 'say': message.channel.send(message.content.substring(4)); break;
+			case 'commands': message.channel.send("the commands are: ping, encourage, speak, say, tictactoe, mark, mastermind, guess, commands"); break;	
 			case 'tictactoe':
-				for (var i in map) {
-					if(map[message.channel.id]){
-						message.reply("there's already an ongoing game in this channel.");
-						return;
-					}
+
+				if( this._argsNumber != 1) {
+
+					message.reply("wrong command, you dummy. Expected >tictactoe @<username>, got something else.");
+					return;
 				}
 
-				map[message.channel.id] = new TicTacToe(message);
-				map[message.channel.id].startGame(message);
+				var player2 = this._commandArgs[0].slice(2);
+				player2 = player2.slice(0,player2.length - 1);
+
+				var membersArray = message.guild.members.array();
+				var player2IsMember = false;
+
+				for(var i in membersArray){
+					if(message.guild.members.array()[i].user.id === player2)
+						player2IsMember = true;
+				}
+
+				if(!player2IsMember){
+					message.reply("wrong command, you dummy. Expected >tictactoe @<username>, got something else.");
+					return;
+				}
+
+				if(map[this._commandChannel]){
+
+					message.reply("there's already an ongoing game in this channel.");
+					return;
+
+				}
+				
+				map[this._commandChannel] = new TicTacToe(message);
+				map[this._commandChannel].startGame(message);
 				break;
 			case 'mastermind':
 				for (var i in map) {
@@ -61,7 +81,14 @@ class Command {
 						message.reply("there is no ongoing mastermind game in this channel, dummy.");
 						return;
 					}
-				else map[message.channel.id].playGame(message);
+
+					if( this._argsNumber != 1) {
+
+						message.reply("wrong command, you dummy. Expected >tictactoe @<username>, got something else.");
+						return;
+					}
+
+				map[message.channel.id].playGame(message);
 				break;
 			case 'mark':
 				if(!map[message.channel.id]){
@@ -115,15 +142,9 @@ class TicTacToe extends Game {
 
 	startGame (message) {
 
-		if(this._players[1][0] != '<' && this._players[1][1] != '@'){
-
-			message.reply("wrong command, you dummy. Expected >tictactoe @<username>, got something else.");
-			return;
-		}
-
 		this._players[1] = this._players[1].slice(2,20);
 	
-		message.reply("you started a game of tic-tac-toe with <@" + this._players[1] + ">. Say >mark <i> <j> to make your first move.");
+		message.reply("you started a game of tic-tac-toe with <@" + this._players[1] + ">. Say >mark <row> <column> to make your first move.");
 		 
 		message.channel.send(this._gameBoard[0][0] + " " +
 							 this._gameBoard[0][1] + " " +
@@ -191,7 +212,6 @@ class TicTacToe extends Game {
 
 		if(i <0 || i>2 || j<0 || j>2) {
 			message.reply("wrong move, expected coordinates between 0 and 2. Try again.");
-			console.log("play game function");
 			return;
 		}
 
@@ -247,9 +267,9 @@ class Mastermind extends Game {
 
 			this._numberToGuess = getRandomIntInclusive(10000,99999).toString();
 
-			console.log(this._numberToGuess);
-
 			message.channel.send("I thought of a " + this._nrOfDigits + " digit number. Say >guess <number> to make your first guess!");
+
+			message.channel.send("_ _ _ _ _");
 
 			this._gameBoard = [];
 
