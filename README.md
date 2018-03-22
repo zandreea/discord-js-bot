@@ -8,6 +8,8 @@
 - <b><i>encourage</i></b>: gives a random wholesome encouraging message from a JSON;
 - <b><i>tictactoe @...</i></b>: starts a tic-tac-toe game with the tagged user;
 - <b><i>mark ... ...</i></b>: in an on-going tic-tac-toe game, marks the position that has the given coordinates;
+- <b><i>mastermind</i></b>: starts a mastermind game;
+- <b><i>guess ...</i></b>: in an on-going mastermind game, guesses the number;
 - <b><i>commands</i></b>: returns the commands list.
 <br><br>
-Planning on finishing the tic-tac-toe and adding more minigames.
+Planning on adding more minigames.
