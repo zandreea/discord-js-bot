@@ -32,7 +32,7 @@ class Command {
 				message.reply(message.content.substring(4));
 				break;
 			case 'commands':
-				message.reply("the commands are: \0 >ping; \0 >encourage \0 >speak \0 >say \0 >tictactoe \0 >commands");
+				message.reply("the commands are: ping, encourage, speak, say, tictactoe, mark, mastermind, guess, commands");
 				break;	
 			case 'tictactoe':
 				for (var i in map) {
@@ -45,9 +45,27 @@ class Command {
 				map[message.channel.id] = new TicTacToe(message);
 				map[message.channel.id].startGame(message);
 				break;
+			case 'mastermind':
+				for (var i in map) {
+					if(map[message.channel.id]){
+						message.reply("there's already an ongoing game in this channel.");
+						return;
+					}
+				}
+
+				map[message.channel.id] = new Mastermind(message);
+				map[message.channel.id].startGame(message);
+				break;
+			case 'guess':
+				if(!map[message.channel.id]){
+						message.reply("there is no ongoing mastermind game in this channel, dummy.");
+						return;
+					}
+				else map[message.channel.id].playGame(message);
+				break;
 			case 'mark':
 				if(!map[message.channel.id]){
-						message.reply("there is no ongoing tic tac toe game in this channel, dummy.");
+						message.reply("there is no ongoing tic-tac-toe game in this channel, dummy.");
 						return;
 					}
 				if(message.content.substring(1).split(' ').length != 3 || 
@@ -105,7 +123,7 @@ class TicTacToe extends Game {
 
 		this._players[1] = this._players[1].slice(2,20);
 	
-		message.reply("you started a game with <@" + this._players[1] + ">. <@" + this._players[0] + ">, make your first move.");
+		message.reply("you started a game of tic-tac-toe with <@" + this._players[1] + ">. Say >mark <i> <j> to make your first move.");
 		 
 		message.channel.send(this._gameBoard[0][0] + " " +
 							 this._gameBoard[0][1] + " " +
@@ -134,11 +152,6 @@ class TicTacToe extends Game {
 	}
 
 	endGameDraw (message) {
-
-		for (var i in map){
-			if(i==this._gameChannel && map[i] == "tictactoe")
-				map[i] = "";
-		}
 		
 		message.channel.send("It's a draw. Wah-wah.");
 
@@ -178,6 +191,7 @@ class TicTacToe extends Game {
 
 		if(i <0 || i>2 || j<0 || j>2) {
 			message.reply("wrong move, expected coordinates between 0 and 2. Try again.");
+			console.log("play game function");
 			return;
 		}
 
@@ -210,11 +224,78 @@ class TicTacToe extends Game {
 			return;
 		}
 
-
-
 		message.channel.send("<@" + this._players[this._turn] + ">, make your move.");
 	}
 
+}
+
+class Mastermind extends Game {
+
+	constructor (message) {
+		super();
+		this._gameChannel = message.channel.id;
+		this._players[0] = message.author.id;
+		this._numberToGuess = "";
+		this._nrOfDigits = 5;
+		this._gameBoard = [];
+		this._guesses = 0;
+	}
+
+	startGame(message) {
+
+			message.reply("you started a game of mastermind. I'm thinking of a number...");
+
+			this._numberToGuess = getRandomIntInclusive(10000,99999).toString();
+
+			console.log(this._numberToGuess);
+
+			message.channel.send("I thought of a " + this._nrOfDigits + " digit number. Say >guess <number> to make your first guess!");
+
+			this._gameBoard = [];
+
+	}
+
+	playGame(message) {
+
+		if(message.author.id != this._players[0]){
+			message.reply("not your turn. Cease immediately. Or else.");
+			return;
+		}
+
+		var number = message.content.substring(1).split(' ')[1];
+
+		if(number.length != this._nrOfDigits || isNaN(parseInt(number, 10)) ) {
+			message.reply("not a valid number. Give a number with " + this._nrOfDigits + " digits.");
+			return;
+		}
+
+		this._gameBoard[this._guesses + 1] = number;
+		this._guesses = this._guesses + 1;
+
+		if(this._guesses == 20 && this._gameBoard[this._guesses] != this._numberToGuess) {
+			message.reply("you guessed 20 times already and you didn't get it right. You lost. The number was " + this._numberToGuess + ".");
+			map[this._gameChannel] = "";
+			return;
+		}
+
+		if(this._gameBoard[this._guesses] == this._numberToGuess) {
+			message.reply("you guessed it right! You won. The number was " + this._numberToGuess + ".");
+			map[this._gameChannel] = "";
+			return;
+		}
+		
+		var digitsOnPosition = 0, digitsNotOnPosition = 0;
+
+		for(var i=0; i<this._nrOfDigits; i++) {
+			if (this._gameBoard[this._guesses][i] == this._numberToGuess[i])
+				digitsOnPosition = digitsOnPosition + 1;
+			else if (this._gameBoard[this._guesses].indexOf(this._numberToGuess[i]) != -1 )
+				digitsNotOnPosition = digitsNotOnPosition + 1;
+		}
+
+		message.channel.send("You got " + digitsOnPosition + " digits on their position and " + digitsNotOnPosition + " digits that aren't on their position. Take another guess.")
+
+	}
 }
 
 fs.readFile('./botlines.json', 'utf8', function (err, data) {
@@ -226,8 +307,15 @@ function getRandomInt(max) {
 	return Math.floor(Math.random() * Math.floor(max));
 }
 
+function getRandomIntInclusive(min, max) {
+	min = Math.ceil(min);
+	max = Math.floor(max);
+	return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
 client.on('ready', function() {
 	console.log('I am ready!');
+	client.user.setUsername("ecksdeeBot");
 	
 });
 
