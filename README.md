@@ -1,5 +1,5 @@
 # discord-js-bot
-  A discord bot that doesn't do much, for now. It has some basic commands, a singleplayer mastermind game and a two-player tic-tac-toe game.
+  A discord bot with a singleplayer mastermind game and a two-player tic-tac-toe game, as well as some other commands.
 <br><br><b>Command list: </b><br><br>
   Every command should be of the form: <i>>command</i>
 - <b><i>ping</i></b>: answers with pong;
