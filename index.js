@@ -1,10 +1,15 @@
 "use strict";
 
-const Discord = require('discord.js');
-const client = new Discord.Client();
+const { Client, GatewayIntentBits } = require('discord.js');
+const client = new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+  ],
+});
 const fs = require('fs');
-const auth = require("./auth.json");
-//var commands = require("./commands.js");
+require('dotenv').config();
 
 var botlines, tictacgame, symbols = ["x","o"],  map = {}, nr;
 
@@ -333,13 +338,11 @@ function getRandomIntInclusive(min, max) {
 	return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-client.on('ready', function() {
+client.once('clientReady', function() {
 	console.log('I am ready!');
-	client.user.setUsername("ecksdeeBot");
-	
 });
 
-client.on('message', async function(message) {
+client.on('messageCreate', async function(message) {
 	
 	if(message.author.bot) return;
 
@@ -349,4 +352,4 @@ client.on('message', async function(message) {
 	}
 });
 
-client.login(auth.token);
+client.login(process.env.DISCORD_TOKEN);
