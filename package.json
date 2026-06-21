@@ -1,6 +1,6 @@
 {
   "name": "discordbot2",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -9,8 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "discord.js": "^11.3.0",
-    "hashmap": "^2.3.0",
-    "npm": "^5.7.1"
+    "discord.js": "^14.0.0",
+    "dotenv": "^16.0.0"
   }
 }
